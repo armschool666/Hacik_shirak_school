@@ -3,8 +3,8 @@ import { SignJWT, jwtVerify } from "jose";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 function getSecret(): Uint8Array {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) throw new Error("AUTH_SECRET env var is required");
+  const secret = process.env.AUTH_SECRET ?? process.env.ADMIN_TOKEN;
+  if (!secret) throw new Error("ADMIN_TOKEN env var is required");
   return new TextEncoder().encode(secret);
 }
 
