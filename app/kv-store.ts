@@ -1,4 +1,9 @@
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export interface JsonStore<T> {
   read(): Promise<T>;
@@ -8,12 +13,12 @@ export interface JsonStore<T> {
 
 export function createKvStore<T>(key: string, fallback: T): JsonStore<T> {
   async function readRaw(): Promise<T> {
-    const value = await kv.get<T>(key);
+    const value = await redis.get<T>(key);
     return value ?? fallback;
   }
 
   async function writeRaw(value: T): Promise<void> {
-    await kv.set(key, value);
+    await redis.set(key, value);
   }
 
   return {
