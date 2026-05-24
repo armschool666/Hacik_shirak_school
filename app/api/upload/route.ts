@@ -1,4 +1,4 @@
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { put, del } from "@vercel/blob";
 import path from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "../auth-check";
@@ -83,39 +83,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "File content does not match its extension" }, { status: 400 });
   }
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDir, { recursive: true });
-
   const fileName = safeFileName(file.name);
-  await writeFile(path.join(uploadDir, fileName), buffer);
+  const blob = await put(fileName, buffer, { access: "public" });
 
   return NextResponse.json({
     name: file.name,
-    href: `/uploads/${fileName}`,
+    href: blob.url,
     size: file.size,
   });
 }
 
-// DELETE /api/upload?href=/uploads/filename.pdf
 export async function DELETE(request: NextRequest) {
   const authError = await requireAuth();
   if (authError) return authError;
 
   const href = request.nextUrl.searchParams.get("href");
-  if (!href || !href.startsWith("/uploads/")) {
+  if (!href) {
     return NextResponse.json({ error: "Invalid href" }, { status: 400 });
   }
 
-  const fileName = path.basename(href);
-  if (fileName.includes("..") || fileName.includes("/")) {
-    return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
-  }
-
-  const filePath = path.join(process.cwd(), "public", "uploads", fileName);
   try {
-    await unlink(filePath);
+    if (href.includes("blob.vercel-storage.com")) {
+      await del(href);
+    }
+    // Silently ignore legacy /uploads/ paths (local dev)
   } catch {
-    // File already gone — treat as success
+    // Already gone — treat as success
   }
   return NextResponse.json({ ok: true });
 }

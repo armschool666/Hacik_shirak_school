@@ -26,7 +26,8 @@ export async function uploadFiles(files: FileList | null): Promise<UploadFile[]>
 }
 
 export async function deleteUploadedFile(href: string): Promise<void> {
-  if (!href.startsWith("/uploads/")) return;
+  const isDeletable = href.startsWith("/uploads/") || href.includes("blob.vercel-storage.com");
+  if (!isDeletable) return;
   await fetch(`/api/upload?href=${encodeURIComponent(href)}`, { method: "DELETE" });
 }
 
