@@ -1,9 +1,4 @@
-import { Redis } from "@upstash/redis";
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+import { list, put } from "@vercel/blob";
 
 export interface JsonStore<T> {
   read(): Promise<T>;
@@ -11,14 +6,26 @@ export interface JsonStore<T> {
   update(mutator: (current: T) => T | Promise<T>): Promise<T>;
 }
 
-export function createKvStore<T>(key: string, fallback: T): JsonStore<T> {
+export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
   async function readRaw(): Promise<T> {
-    const value = await redis.get<T>(key);
-    return value ?? fallback;
+    try {
+      const { blobs } = await list({ prefix: filename });
+      const blob = blobs.find((b) => b.pathname === filename);
+      if (!blob) return fallback;
+      const res = await fetch(blob.url, { cache: "no-store" });
+      if (!res.ok) return fallback;
+      return (await res.json()) as T;
+    } catch {
+      return fallback;
+    }
   }
 
   async function writeRaw(value: T): Promise<void> {
-    await redis.set(key, value);
+    await put(filename, JSON.stringify(value), {
+      access: "public",
+      addRandomSuffix: false,
+      contentType: "application/json",
+    });
   }
 
   return {
