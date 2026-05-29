@@ -24,6 +24,7 @@ export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
     await put(filename, JSON.stringify(value), {
       access: "public",
       addRandomSuffix: false,
+      allowOverwrite: true,
       contentType: "application/json",
       storeId: process.env.BLOB1_STORE_ID,
       token: process.env.BLOB1_READ_WRITE_TOKEN,
