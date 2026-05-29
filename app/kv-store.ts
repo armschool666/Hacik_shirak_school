@@ -9,7 +9,7 @@ export interface JsonStore<T> {
 export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
   async function readRaw(): Promise<T> {
     try {
-      const { blobs } = await list({ prefix: filename });
+      const { blobs } = await list({ prefix: filename, storeId: process.env.BLOB1_STORE_ID });
       const blob = blobs.find((b) => b.pathname === filename);
       if (!blob) return fallback;
       const res = await fetch(blob.url, { cache: "no-store" });
