@@ -14,14 +14,20 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const authError = await requireAuth();
   if (authError) return authError;
-  const payload = (await request.json()) as Omit<AdminEntry, "id" | "date">;
-  const entry: AdminEntry = {
-    ...payload,
-    id: crypto.randomUUID(),
-    date: new Date().toISOString().slice(0, 10),
-  };
-  await updateMaterials((entries) => [entry, ...entries]);
-  return NextResponse.json(entry, { status: 201 });
+  try {
+    const payload = (await request.json()) as Omit<AdminEntry, "id" | "date">;
+    const entry: AdminEntry = {
+      ...payload,
+      id: crypto.randomUUID(),
+      date: new Date().toISOString().slice(0, 10),
+    };
+    await updateMaterials((entries) => [entry, ...entries]);
+    return NextResponse.json(entry, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/materials]", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function PUT(request: NextRequest) {
