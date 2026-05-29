@@ -84,7 +84,11 @@ export async function POST(request: NextRequest) {
   }
 
   const fileName = safeFileName(file.name);
-  const blob = await put(fileName, buffer, { access: "public" });
+  const blob = await put(fileName, buffer, {
+    access: "public",
+    storeId: process.env.FILES_STORE_ID,
+    token: process.env.FILES_READ_WRITE_TOKEN,
+  });
 
   return NextResponse.json({
     name: file.name,
@@ -104,7 +108,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     if (href.includes("blob.vercel-storage.com")) {
-      await del(href);
+      await del(href, { token: process.env.FILES_READ_WRITE_TOKEN });
     }
     // Silently ignore legacy /uploads/ paths (local dev)
   } catch {
