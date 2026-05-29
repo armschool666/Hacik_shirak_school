@@ -64,36 +64,44 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get("file");
 
-  if (!(file instanceof File)) {
+  console.log("[upload] file constructor:", file?.constructor?.name, "instanceof File:", file instanceof File);
+
+  if (!file || typeof file === "string" || typeof (file as Blob).arrayBuffer !== "function") {
     return NextResponse.json({ error: "Missing file" }, { status: 400 });
   }
 
-  if (file.size > MAX_FILE_SIZE) {
+  const uploadedFile = file as File;
+  const fileName = uploadedFile.name ?? "unknown";
+  const fileSize = uploadedFile.size ?? 0;
+
+  if (fileSize > MAX_FILE_SIZE) {
     return NextResponse.json({ error: "File too large (max 10 MB)" }, { status: 413 });
   }
 
-  const ext = path.extname(file.name).toLowerCase();
+  const ext = path.extname(fileName).toLowerCase();
+  console.log("[upload] ext:", ext, "size:", fileSize);
+
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
+    return NextResponse.json({ error: "File type not allowed", ext }, { status: 400 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const buffer = Buffer.from(await uploadedFile.arrayBuffer());
 
   if (!hasValidMagicBytes(ext, buffer)) {
     return NextResponse.json({ error: "File content does not match its extension" }, { status: 400 });
   }
 
-  const fileName = safeFileName(file.name);
-  const blob = await put(fileName, buffer, {
+  const safeFile = safeFileName(fileName);
+  const blob = await put(safeFile, buffer, {
     access: "public",
     storeId: process.env.BLOB1_STORE_ID,
     token: process.env.BLOB1_READ_WRITE_TOKEN,
   });
 
   return NextResponse.json({
-    name: file.name,
+    name: fileName,
     href: blob.url,
-    size: file.size,
+    size: fileSize,
   });
 }
 
