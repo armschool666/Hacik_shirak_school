@@ -26,6 +26,7 @@ export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "application/json",
+      storeId: process.env.BLOB1_STORE_ID,
     });
   }
 

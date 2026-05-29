@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
   const safeFile = safeFileName(fileName);
   const blob = await put(safeFile, buffer, {
     access: "public",
+    storeId: process.env.BLOB1_STORE_ID,
   });
 
   return NextResponse.json({
