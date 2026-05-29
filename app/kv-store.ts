@@ -9,22 +9,13 @@ export interface JsonStore<T> {
 export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
   async function readRaw(): Promise<T> {
     try {
-      const token = process.env.BLOB1_READ_WRITE_TOKEN;
-      console.log(`[kv-store] reading "${filename}", token: ${token ? "ok" : "MISSING"}`);
-      const { blobs } = await list({ prefix: filename, token });
-      console.log(`[kv-store] blobs found: ${blobs.length}`, blobs.map((b) => b.pathname));
+      const { blobs } = await list({ prefix: filename });
       const blob = blobs.find((b) => b.pathname === filename);
-      if (!blob) {
-        console.log(`[kv-store] "${filename}" not found in list, returning fallback`);
-        return fallback;
-      }
-      console.log(`[kv-store] fetching: ${blob.url}`);
+      if (!blob) return fallback;
       const res = await fetch(blob.url, { cache: "no-store" });
-      console.log(`[kv-store] fetch status: ${res.status}`);
       if (!res.ok) return fallback;
       return (await res.json()) as T;
-    } catch (err) {
-      console.error(`[kv-store] error reading "${filename}":`, err);
+    } catch {
       return fallback;
     }
   }
@@ -35,8 +26,6 @@ export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "application/json",
-      storeId: process.env.BLOB1_STORE_ID,
-      token: process.env.BLOB1_READ_WRITE_TOKEN,
     });
   }
 
