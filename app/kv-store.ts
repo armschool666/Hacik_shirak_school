@@ -12,10 +12,7 @@ export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
       const { blobs } = await list({ prefix: filename });
       const blob = blobs.find((b) => b.pathname === filename);
       if (!blob) return fallback;
-      const res = await fetch(blob.url, {
-        headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
-        cache: "no-store",
-      });
+      const res = await fetch(blob.url, { cache: "no-store" });
       if (!res.ok) return fallback;
       return (await res.json()) as T;
     } catch {
@@ -25,7 +22,7 @@ export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
 
   async function writeRaw(value: T): Promise<void> {
     await put(filename, JSON.stringify(value), {
-      access: "private",
+      access: "public",
       addRandomSuffix: false,
       contentType: "application/json",
     });
