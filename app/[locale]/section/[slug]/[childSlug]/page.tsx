@@ -4,6 +4,8 @@ import { SiteShell } from "../../../../components";
 import { sections } from "../../../../data";
 import { UserMaterials } from "../../../../user-materials";
 
+export const dynamic = "force-dynamic";
+
 export function generateStaticParams() {
   return sections.flatMap((section) =>
     section.links.map((link) => ({
