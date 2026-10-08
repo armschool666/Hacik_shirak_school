@@ -312,8 +312,14 @@ export async function SiteShell({ children }: { children: React.ReactNode }) {
               © {new Date().getFullYear()} {schoolName}. {t("footer.rights")}
             </span>
             <span className="footer-bottom-credits">
-              {t("footer.madeBy")}{" "}
-              <strong>{schoolConfig.shortName[locale]}</strong>
+              Website by{" "}
+              <a
+                href="https://businessin.am/"
+                target="_blank"
+                rel="nofollow noreferrer"
+              >
+                BusinessIN
+              </a>
             </span>
           </div>
         </div>
