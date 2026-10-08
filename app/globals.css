@@ -1154,9 +1154,15 @@ img {
   gap: 6px;
 }
 
-.footer-bottom-credits strong {
+.footer-bottom-credits a {
   color: var(--gold);
   font-weight: 800;
+  text-decoration: none;
+}
+
+.footer-bottom-credits a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ========== Login Page ========== */
