@@ -1,4 +1,5 @@
-import { list, put } from "@vercel/blob";
+import { BlobNotFoundError, head, put } from "@vercel/blob";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 export interface JsonStore<T> {
   read(): Promise<T>;
@@ -7,18 +8,29 @@ export interface JsonStore<T> {
 }
 
 export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
+  const storeId = process.env.BLOB1_STORE_ID;
+  const cacheTag = `blob-json:${filename}`;
+
   async function readRaw(): Promise<T> {
     try {
-      const { blobs } = await list({ prefix: filename, storeId: process.env.BLOB1_STORE_ID });
-      const blob = blobs.find((b) => b.pathname === filename);
-      if (!blob) return fallback;
-      const res = await fetch(blob.url, { cache: "no-store" });
-      if (!res.ok) return fallback;
+      const blob = await head(filename, { storeId });
+      const url = new URL(blob.url);
+      url.searchParams.set("v", blob.etag);
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`Failed to read ${filename}: ${res.status}`);
+      }
       return (await res.json()) as T;
-    } catch {
-      return fallback;
+    } catch (error) {
+      if (error instanceof BlobNotFoundError) return fallback;
+      throw error;
     }
   }
+
+  const readCached = unstable_cache(readRaw, ["blob-json", filename], {
+    tags: [cacheTag],
+    revalidate: 86400,
+  });
 
   async function writeRaw(value: T): Promise<void> {
     await put(filename, JSON.stringify(value), {
@@ -26,15 +38,16 @@ export function createKvStore<T>(filename: string, fallback: T): JsonStore<T> {
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "application/json",
-      storeId: process.env.BLOB1_STORE_ID,
+      storeId,
     });
+    revalidateTag(cacheTag, { expire: 0 });
   }
 
   return {
-    read: readRaw,
+    read: readCached,
     write: writeRaw,
     update: async (mutator) => {
-      const current = await readRaw();
+      const current = await readCached();
       const next = await mutator(current);
       await writeRaw(next);
       return next;
