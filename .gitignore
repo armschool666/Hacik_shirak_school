@@ -1,7 +1,10 @@
 # Next.js build artifacts
 .next
+.open-next
+.wrangler
 out
 next-env.d.ts
+cloudflare-env.d.ts
 tsconfig.tsbuildinfo
 
 # Dependencies
